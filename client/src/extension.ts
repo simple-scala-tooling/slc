@@ -49,28 +49,33 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 export function activate(context: ExtensionContext) {
 
 	// const module = context.asAbsolutePath(path.join('java', '-jar', '../out/sls/assembly.dest/out.jar'));	
-	const outputChannel: OutputChannel = Window.createOutputChannel('lsp-multi-server-example');
+	const outputChannel: OutputChannel = Window.createOutputChannel('Simple Language Server');
+	const serverJarPath = context.asAbsolutePath("../simple-language-server/out/sls/assembly.dest/out.jar");
 	const serverOptions = {
 		run: {
 			command: 'java',
-			args: ['-jar', context.asAbsolutePath("../simple-language-server/out/sls/assembly.dest/out.jar")],
+			args: ['-jar', serverJarPath],
 			transport: TransportKind.stdio
 		},
 		debug: {
 			command: 'java',
 			args: [
-				'-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
+				// '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
 				'-jar',
-				context.asAbsolutePath("../simple-language-server/out/sls/assembly.dest/out.jar")
+				serverJarPath
 			],
 			transport: TransportKind.stdio
 		}
 	};
 
+	// Define supported file extensions
+	const supportedFileExtensions = ['scala', 'java', 'mill', 'sbt'];
+
 	function didOpenTextDocument(document: TextDocument): void {
 		// We are only interested in language mode text
 		console.log(document);
-		if (document.languageId !== 'plaintext' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
+		console.log(document.languageId);
+		if (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled') {
 			return;
 		}
 
@@ -78,13 +83,11 @@ export function activate(context: ExtensionContext) {
 		// Untitled files go to a default client.
 		if (uri.scheme === 'untitled' && !defaultClient) {
 			const clientOptions: LanguageClientOptions = {
-				documentSelector: [
-					{ scheme: 'untitled', language: 'plaintext' }
-				],
-				diagnosticCollectionName: 'lsp-multi-server-example',
+				documentSelector: supportedFileExtensions.map(ext => ({ scheme: 'untitled', language: ext })),
+				diagnosticCollectionName: 'Simple Language Server',
 				outputChannel: outputChannel
 			};
-			defaultClient = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
+			defaultClient = new LanguageClient('Scala Language Client', 'Scala Language Server', serverOptions, clientOptions);
 			defaultClient.start();
 			return;
 		}
@@ -94,19 +97,21 @@ export function activate(context: ExtensionContext) {
 		if (!folder) {
 			return;
 		}
-		// If we have nested workspace folders we only start a server on the outer most workspace folder.
+		// If we have nested workspace folders we only start a server on the outermost workspace folder.
 		folder = getOuterMostWorkspaceFolder(folder);
 
 		if (!clients.has(folder.uri.toString())) {
 			const clientOptions: LanguageClientOptions = {
-				documentSelector: [
-					{ scheme: 'file', language: 'plaintext', pattern: `${folder.uri.fsPath}/**/*` }
-				],
-				diagnosticCollectionName: 'lsp-multi-server-example',
+				documentSelector: supportedFileExtensions.map(ext => ({
+					scheme: 'file',
+					language: ext,
+					pattern: `${folder.uri.fsPath}/**/*`
+				})),
+				diagnosticCollectionName: 'Simple Language Server',
 				workspaceFolder: folder,
 				outputChannel: outputChannel
 			};
-			const client = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
+			const client = new LanguageClient('Scala Language Client', 'Scala Language Server', serverOptions, clientOptions);
 			client.start();
 			clients.set(folder.uri.toString(), client);
 		}

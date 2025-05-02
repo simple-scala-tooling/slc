@@ -38,7 +38,30 @@
           "description": "Additional options."
         }
       }
-    }
+    },
+	"languages": [
+		{
+		  "id": "scala",
+		  "aliases": ["Scala", "scala"],
+		  "extensions": [".scala"],
+		  "configuration": "./language-configuration.json"
+		},
+		{
+		  "id": "java",
+		  "aliases": ["Java", "java"],
+		  "extensions": [".java"]
+		},
+		{
+		  "id": "mill",
+		  "aliases": ["Mill", "mill"],
+		  "extensions": [".mill"]
+		},
+		{
+		  "id": "sbt",
+		  "aliases": ["SBT", "sbt"],
+		  "extensions": [".sbt"]
+		}
+	  ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
