@@ -6,23 +6,30 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 
+import { execSync } from 'child_process';
+
 let client: LanguageClient;
 const supportedFileExtensions = ['scala', 'java', 'mill', 'sbt', 'sc'];
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverJarPath = context.asAbsolutePath("../simple-language-server/out/sls/assembly.dest/out.jar");
+	const command = context.asAbsolutePath("../simple-language-server/langoustine-tracer");
+
+	// log java version from cli
+	const javaVersion = execSync('java -version', { encoding: 'utf-8' });
+	console.log(`Java Version: ${javaVersion}`);
+	
 	const serverOptions = {
 		run: {
-			command: 'java',
-			args: ['-jar', serverJarPath],
+			command: command,
+			args: [serverJarPath],
 			transport: TransportKind.stdio
 		},
 		debug: {
-			command: 'java',
+			command: command,
 			args: [
 				// '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
-				'-jar',
 				serverJarPath
 			],
 			transport: TransportKind.stdio
