@@ -13,18 +13,17 @@ const supportedFileExtensions = ['scala', 'java', 'mill', 'sbt', 'sc'];
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
-	const serverJarPath = context.asAbsolutePath("../simple-language-server/out/sls/assembly.dest/out.jar");
-	const command = context.asAbsolutePath("../simple-language-server/langoustine-tracer");
+	const serverJarPath = context.asAbsolutePath("../sls/out/sls/assembly.dest/out.jar");
+	const command = context.asAbsolutePath("../sls/langoustine-tracer");
 
 	// log java version from cli
 	const javaVersion = execSync('java -version', { encoding: 'utf-8' });
 	console.log(`Java Version: ${javaVersion}`);
-	
+
 	const serverOptions = {
 		run: {
 			command: command,
 			args: [serverJarPath],
-			transport: TransportKind.stdio
 		},
 		debug: {
 			command: command,
@@ -32,7 +31,6 @@ export function activate(context: ExtensionContext) {
 				// '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
 				serverJarPath
 			],
-			transport: TransportKind.stdio
 		}
 	};
 
