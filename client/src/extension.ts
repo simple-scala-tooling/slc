@@ -14,7 +14,11 @@ const supportedFileExtensions = ['scala', 'java', 'mill', 'sbt', 'sc'];
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverJarPath = context.asAbsolutePath("../sls/out/sls/assembly.dest/out.jar");
-	const command = context.asAbsolutePath("../sls/langoustine-tracer");
+	const tracer = process.env.LANGOUSTINE_TRACER;
+	if (!tracer) {
+		throw new Error('LANGOUSTINE_TRACER is not set — launch VS Code from the project devShell so the shellHook exports it.');
+	}
+	const command = tracer;
 
 	// log java version from cli
 	const javaVersion = execSync('java -version', { encoding: 'utf-8' });
