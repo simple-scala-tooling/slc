@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
     };
@@ -19,10 +19,13 @@
       perSystem = { system, config, pkgs, ... }:
         {
           devShells.default = pkgs.mkShell {
-            packages = [ pkgs.nodejs_23 ];
+            packages = [ pkgs.nodejs_24 pkgs.jdk21 ];
             inputsFrom = [
               config.treefmt.build.devShell
             ];
+            shellHook = ''
+              export JAVA_HOME="${pkgs.jdk21.home}"
+            '';
           };
 
           treefmt.config = {
