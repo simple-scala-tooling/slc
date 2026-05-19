@@ -29,7 +29,6 @@ export function activate(context: ExtensionContext) {
 			command: command,
 			args: [
 				// '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
-				"-jar",
 				serverJarPath
 			],
 		}
