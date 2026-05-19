@@ -14,7 +14,11 @@ const supportedFileExtensions = ['scala', 'java', 'mill', 'sbt', 'sc'];
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverJarPath = context.asAbsolutePath("../simple-language-server/out/sls/assembly.dest/out.jar");
-	const command = context.asAbsolutePath("../simple-language-server/langoustine-tracer");
+	const javaHome = process.env.JAVA_HOME;
+	if (!javaHome) {
+		throw new Error('JAVA_HOME is not set — launch VS Code from the project devShell so the shellHook exports it.');
+	}
+	const command = `${javaHome}/bin/java`;
 
 	// log java version from cli
 	const javaVersion = execSync('java -version', { encoding: 'utf-8' });
@@ -23,13 +27,14 @@ export function activate(context: ExtensionContext) {
 	const serverOptions = {
 		run: {
 			command: command,
-			args: [serverJarPath],
+			args: ["-jar", serverJarPath],
 			transport: TransportKind.stdio
 		},
 		debug: {
 			command: command,
 			args: [
 				// '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
+				"-jar",
 				serverJarPath
 			],
 			transport: TransportKind.stdio
