@@ -1,4 +1,4 @@
-import { workspace, ExtensionContext } from 'vscode';
+import { workspace, ExtensionContext, commands, window, Uri, EventEmitter } from 'vscode';
 
 import {
 	LanguageClient,
@@ -11,6 +11,11 @@ import { execSync } from 'child_process';
 let client: LanguageClient;
 const supportedFileExtensions = ['scala', 'java', 'mill', 'sbt', 'sc'];
 
+const debugIndexScheme = 'sls-debug-index';
+const debugIndexUri = Uri.parse(`${debugIndexScheme}:Debug Index`);
+let debugIndexContent = '';
+const debugIndexChangeEmitter = new EventEmitter<Uri>();
+
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverJarPath = context.asAbsolutePath("../sls/out/sls/assembly.dest/out.jar");
@@ -18,19 +23,30 @@ export function activate(context: ExtensionContext) {
 
 	// log java version from cli
 	const javaVersion = execSync('java -version', { encoding: 'utf-8' });
-	console.log(`Java Version: ${javaVersion}`);
+	console.log(`Java Version: ${javaVersion}`)
 
 	const serverOptions = {
 		run: {
 			command: command,
-			args: [serverJarPath],
+			args: [
+				serverJarPath, 
+			],
 		},
 		debug: {
-			command: command,
+			command: "java",
 			args: [
-				// '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:6666',
-				serverJarPath
-			],
+				// "-agentlib:jdwp=transport=dt_socket,server=y,quiet=y,suspend=n,address=*:6666",
+				"-Dotel.service.name=simple-language-server",
+				"-Dsls.profiling=true",
+				"-Dotel.sdk.disabled=false",
+				"-Dcats.effect.trackFiberContext=true",
+				"-Dscala.classpath.closeZip=true",
+				"-Dsls.trace.lsp.messages=true",
+				"-Dsls.trace.csp.messages=true",
+				"-jar",
+				serverJarPath,
+                "org.scala.abusers.sls.SimpleScalaServer"
+			], 
 		}
 	};
 
@@ -55,6 +71,41 @@ export function activate(context: ExtensionContext) {
 
 	// Start the client. This will also launch the server
 	client.start();
+
+	const debugIndexProvider = workspace.registerTextDocumentContentProvider(debugIndexScheme, {
+		onDidChange: debugIndexChangeEmitter.event,
+		provideTextDocumentContent() {
+			return debugIndexContent;
+		},
+	});
+
+	const debugIndexCommand = commands.registerCommand('sls.debugIndex', async () => {
+		if (!client) {
+			window.showErrorMessage('Language server is not running.');
+			return;
+		}
+
+		const query = await window.showInputBox({
+			prompt: 'Enter a symbol query (leave empty for stats only)',
+			placeHolder: 'symbol name',
+		});
+
+		if (query === undefined) {
+			return; // user cancelled
+		}
+
+		try {
+			const result = await client.sendRequest('sls/debugIndex', { query: query || undefined });
+			debugIndexContent = JSON.stringify(result, null, 2);
+			debugIndexChangeEmitter.fire(debugIndexUri);
+			const doc = await workspace.openTextDocument(debugIndexUri);
+			await window.showTextDocument(doc, { preview: true });
+		} catch (err) {
+			window.showErrorMessage(`Debug Index request failed: ${err}`);
+		}
+	});
+
+	context.subscriptions.push(debugIndexProvider, debugIndexCommand);
 }
 
 export function deactivate(): Thenable<void> | undefined {

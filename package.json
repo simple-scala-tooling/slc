@@ -39,6 +39,12 @@
         }
       }
     },
+	"commands": [
+		{
+			"command": "sls.debugIndex",
+			"title": "SLS: Debug Index"
+		}
+	],
 	"languages": [
 		{
 		  "id": "scala",
